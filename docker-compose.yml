@@ -1,0 +1,64 @@
+services:
+  api:
+    build:
+      context: .
+      # target: production
+      dockerfile: ./Dockerfile
+    command: npm run start:prod
+    env_file: .env
+    ports:
+      - "3000:3000"
+    networks:
+      - webservice-network
+    volumes:
+      # - .:/usr/src/app
+      - /usr/src/app/node_modules
+      # - /home/files/:/files
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    env_file: .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - webservice-network
+    environment:
+      POSTGRES_HOST: ${DATABASE_HOST}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - '${DATABASE_PORT}:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    volumes:
+      - redis-data:/data
+    # command: ["redis-server", "--appendonly", "yes", "--replica-read-only", "no"]
+    command: ["redis-server", "--appendonly", "yes", "--tcp-backlog", "65536"]
+    ports:
+      - '${REDIS_PORT}:6379'
+    networks:
+      - webservice-network
+    restart: always
+    expose:
+      - 6379
+
+networks:
+  webservice-network:
+    name: webservice-network
+
+volumes:
+  postgres-data:
+  redis-data:

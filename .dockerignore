@@ -1,0 +1,8 @@
+# setup.sh
+test
+dist
+.env.example
+.gitignore
+docker-compose.yml
+Dockerfile
+README.md
